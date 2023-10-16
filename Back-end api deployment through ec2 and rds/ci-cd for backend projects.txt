@@ -1,0 +1,95 @@
+Topic:: create ci/cd for backend projects in AWS,ubuntu20.04
+
+1.create one ec2 instance having os ubuntu 20.04 and also in Advanced details select ec2codedeploy role in "IAM instance profile"
+for how to create it i share doc. on drive.
+
+2.fire cmds:
+	sudo apt-get -y update
+	sudo apt-get -y install apache2
+	cd /var/www/html
+	sudo apt-get -y install ruby
+	sudo apt-get install wget
+	wget https://aws-codedeploy-ap-south-1.s3.ap-south-1.amazonaws.com/latest/install
+	sudo chmod +x ./install
+	sudo ./install auto
+	sudo service codedeploy-agent start
+	sudo add-apt-repository ppa:ondrej/php
+	sudo apt-get install php8.1 libapache2-mod-php8.1 php8.1-mysql
+	sudo apt-get install php8.1-mcrypt
+	sudo apt-get install php8.1-mbstring
+	sudo apt-get install php8.1-xml
+3.On other side go to Code Deploy service and select Create application in
+Applications.
+
+	• Step2:Give name it and Select “EC2/On-premises” in compute platform
+		and create application
+	• Step3:Now Select “Create deployment group” in created application,
+		give name to deployment group according to project name e.g. 
+		IB-frontend_Deployment, select role which we created for code
+		deploy in previously share in other file of i am role folder.
+	• Step4:In Environment configuration select Amazon EC2 instances, in “key”
+		select “name", in value option select ec2 instance name on which you
+		want to live project.
+	Note:: all projects are live on same ec2 instance so in value option everytime select same insance name,in my case it is "server" also there 
+	       is only we have to create one application(step2) and inside of it we have to create diffrent deployment groups for diffrent projects(step3&4)
+
+	• Step5: In “load balancer” option untick “Enable load balancing” and select “Create deployment group”.
+
+4.Now Goto Create pipeline, give name pipeline click next, in source add GitHub (Version2), if doing this first time then select “connect to GitHub", give name 
+  to connection and select “connect to GitHub", then select “Install New app” in that select “All repositories” if you want to add all repo in connection or 
+  select “Only select repositories” if want to add specific repo. In connection. Then save it.
+
+5.Now, in repository name select the repo you want to connect and in branch name, name of the branch you want to add, click Next.
+
+6.Skip the build stage.
+
+7.Deploy stage select “AWS CodeDeploy” in Application name of the app,in Deployment group select name of Deployment group of specific project you want to live.
+
+8.Click next. Click “Create Pipeline”.
+
+9.In Pipeline Deploy section go to details > Events > View Events,if all events show successfull it means pipline execute successfully.
+
+10. Add .htaccess,index.php and add .env file from .envexample file manually in project folder,also give permission for .htaccess for that fire cmds::
+	sudo a2enmod rewrite
+	nano /etc/apache2/apache2.conf
+
+    go to very bottom of file on there paste data give below::
+	<Directory "/var/www/html">
+	AllowOverride All
+	</Directory> 
+    restart apache server
+	service apache2 restart
+    now your project is live and works fine
+
+11. In .env file in DB_DATABASE paste name of data base which you create using rds,in DB_USERNAME and DB_PASSWORD give Master Username and
+    Master Password which you given when creating rds,and save it. then again one time restart apache2.
+
+	Note:: we live all db in same rds so only DB_DATABSE name is gonna change every time with new project and DB_USERNAME,DB_PASSWORD gonna have same.
+12. Fire following cmd:
+nano /etc/php/8.1/apache2/php.ini
+
+• Change three things in there by finding it in file using Ctrl+Q .
+upload_max_filesize = 512M
+post_max_size = 558M
+max_execution_time = 300
+
+• if you create new project and new db then pass following cmds::
+
+php artisan migrate:fresh
+php artisan passport:install
+php artisan key:generate
+php artisan route:cache
+php artisan route:clear
+php artisan db:seed
+
+if not then just pass above's 3rd cmd if key is not added in .env file.
+
+13. This step perform if you launch newly ec2 other wise skip it(but for cross check is it gonna performed or not previously just do it.)
+
+• Now, add one line in apache2.conf file for that fire cmd:
+sudo nano /etc/apache2/apache2.conf
+• Find .htaccess using Ctrl+Q and add given below line on that place which
+is shown in given figure.
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+14. restart apache server and your domain starts working.

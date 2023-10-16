@@ -1,0 +1,138 @@
+Topic:: GitHub's side setup for ci/cd flow in Ubuntu20.04
+1. Create one branch for ci/cd in github from uat for uat proj. and from prod branch for live project.
+2. Create appspec.yml file on root path.
+
+->for frontend:: appspec.yml
+
+
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /var/www/html/Projectname-Frontend
+hooks:
+  BeforeInstall:
+    - location: scripts/install_dependencies
+      timeout: 300
+      runas: root
+    - location: scripts/start_server
+      timeout: 300
+      runas: root
+  ApplicationStop:
+    - location: scripts/stop_server
+      timeout: 300
+      runas: root
+
+->for Backend :: appspec.yml
+
+
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /var/www/html/Projectname-backend
+hooks:
+  BeforeInstall:
+    - location: scripts/install_dependencies
+      timeout: 300
+      runas: root
+    - location: scripts/start_server
+      timeout: 300
+      runas: root
+  AfterInstall:
+    - location: scripts/install
+      timeout: 300
+      runas: root
+  ApplicationStop:
+    - location: scripts/stop_server
+      timeout: 300
+      runas: root
+
+Note:: replace "Projectname" with your name of project. 
+
+3. Create folder named "scripts" on root path of project and inside of it create files as mentioned below::
+
+=>for frontend-projects:
+
+-> install_dependencies
+
+#!/bin/bash
+sudo apt-get -y update
+sudo apt-get -y install apache2
+sudo apt-get install -y npm
+npm i @vue/cli-service --legacy-peer-deps
+
+
+-> start_server
+
+#!/bin/bash
+
+service apache2 start
+
+
+-> stop_server
+
+#!/bin/bash
+isExistApp = `pgrep apache2`
+if [[ -n  $isExistApp ]]; then
+    service apache2 stop        
+fi
+
+
+
+=>for backend-projects:
+
+-> intall
+
+
+#!/bin/bash
+
+cd /var/www/html/Projectname-backend
+composer install --ignore-platform-reqs
+php artisan config:cache
+php artisan route:cache
+php artisan optimize:clear
+php artisan migrate
+php artisan key:generate
+sudo chmod 777 -R bootstrap/
+sudo chmod 777 -R storage/
+sudo service apache2 restart
+php artisan config:cache
+php artisan route:cache
+
+
+-> install_dependencies
+
+
+#!/bin/bash
+
+sudo apt-get -y update
+sudo apt-get -y install apache2
+sudo apt-get -y install mysql-server
+curl -O https://getcomposer.org/composer.phar
+mv composer.phar composer
+chmod +x composer
+sudo apt-get install zip unzip
+mv composer /usr/local/bin
+
+
+-> start_server
+
+
+#!/bin/bash
+
+sudo service apache2 start
+
+
+-> stop_server
+
+
+#!/bin/bash
+
+isExistApp = `pgrep apache2`
+if [[ -n  $isExistApp ]]; then
+    service apache2 stop        
+fi
+ 
+	->NOTE:: "install_dependencies" file trigger in ci/cd before project is copied in ec2's var/www/html path and "intall" file trigger after file is successfully
+ copied on that path so if you want to add or remove any cmds from that as per project requirement you can do there.

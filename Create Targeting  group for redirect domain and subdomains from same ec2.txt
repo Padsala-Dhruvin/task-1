@@ -1,0 +1,8 @@
+Topic:: Create Targeting  group for redirect domain and subdomains from same ec2.
+
+->open Target groups >Create target group in that in "Basic configuration's Choose a target type" select "Instances".
+->give name to the target group name.
+->select Next
+->select instance you want as a target group in "Available instances" and click on "Include as pending below"  
+->finally click on "Create target group".
+->wait for some time, created target gruop helth shows 1 then it is ready to use.

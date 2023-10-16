@@ -1,0 +1,28 @@
+TOPIC::Add configration (.conf) file for live site on perticular domain name or subdomain name.
+
+1. In apache2 go to path "/etc/apache2/sites-available" and create one .conf file for e.g. example.conf for that fire cmd
+	nano example.conf 
+2. add following data inside that file
+
+<VirtualHost *:80>
+    ServerName exapmle.example.com
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html/example
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    <Directory "/var/www/html/example">
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+
+=>replace "exapmle.example.com" with your domain or sudomain name on which you want to live your project.
+=>replace  path "/var/www/html/example" with your project root folder path where your project exists.
+=>after that pass below cmd 
+	sudo a2ensite example.conf
+	sudo service apache2 restart
+=> after that copy ec2 ip add. and paste it add it with your domain name or subdomain name in this case it's(exapmle.example.com).
+=> restart your apache server, your domain is live.

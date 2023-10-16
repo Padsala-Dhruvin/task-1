@@ -1,0 +1,57 @@
+Topic:: create ci/cd for frontend projects in AWS,ubuntu20.04
+
+1.create one ec2 instance having os ubuntu 20.04 and also in Advanced details select ec2codedeploy role in "IAM instance profile"
+for how to create it i share doc. on drive. 
+2.fire cmds:
+	sudo apt-get -y update
+	sudo apt-get -y install apache2
+	cd /var/www/html
+	sudo apt-get -y install ruby
+	sudo apt-get install wget
+	wget https://aws-codedeploy-ap-south-1.s3.ap-south-1.amazonaws.com/latest/install
+	sudo chmod +x ./install
+	sudo ./install auto
+	sudo service codedeploy-agent start
+
+3.On other side go to Code Deploy service and select Create application in
+Applications.
+
+	• Step2:Give name it and Select “EC2/On-premises” in compute platform
+		and create application
+	• Step3:Now Select “Create deployment group” in created application,
+		give name to deployment group according to project name e.g. 
+		IB-frontend_Deployment, select role which we created for code
+		deploy in previously share in other file of i am role folder.
+	• Step4:In Environment configuration select Amazon EC2 instances, in “key”
+		select “name", in value option select ec2 instance name on which you
+		want to live project.
+	Note:: all projects are live on same ec2 instance so in value option everytime select same insance name,in my case it is "server" also there 
+	       is only we have to create one application(step2) and inside of it we have to create diffrent deployment groups for diffrent projects(step3&4)
+
+	• Step5: In “load balancer” option untick “Enable load balancing” and select “Create deployment group”.
+
+4.Now Goto Create pipeline, give name pipeline click next, in source add GitHub (Version2), if doing this first time then select “connect to GitHub", give name 
+  to connection and select “connect to GitHub", then select “Install New app” in that select “All repositories” if you want to add all repo in connection or 
+  select “Only select repositories” if want to add specific repo. In connection. Then save it.
+
+5.Now, in repository name select the repo you want to connect and in branch name, name of the branch you want to add, click Next.
+
+6.Skip the build stage.
+
+7.Deploy stage select “AWS CodeDeploy” in Application name of the app,in Deployment group select name of Deployment group of specific project you want to live.
+
+8.Click next. Click “Create Pipeline”.
+
+9.In Pipeline Deploy section go to details > Events > View Events,if all events show successfull it means pipline execute successfully.
+
+10. Add .htaccess file manually in project folder,also give permission for .htaccess for that fire cmds::
+	sudo a2enmod rewrite
+	nano /etc/apache2/apache2.conf
+
+    go to very bottom of file on there paste data give below::
+	<Directory "/var/www/html">
+	AllowOverride All
+	</Directory> 
+    restart apache server
+	service apache2 restart
+    now your project is live and works fine
